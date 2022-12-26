@@ -176,15 +176,15 @@ class Box:
         """
         if self.algo.endswith("no_weight"):
             self.average = (
-                sum(c.count * c.xyz[0] for c in self.colors) / self.weight,
-                sum(c.count * c.xyz[1] for c in self.colors) / self.weight,
-                sum(c.count * c.xyz[2] for c in self.colors) / self.weight,
-            )
-        else:
-            self.average = (
                 sum(c.xyz[0] for c in self.colors) / len(self.colors),
                 sum(c.xyz[1] for c in self.colors) / len(self.colors),
                 sum(c.xyz[2] for c in self.colors) / len(self.colors),
+            )
+        else:
+            self.average = (
+                sum(c.count * c.xyz[0] for c in self.colors) / self.weight,
+                sum(c.count * c.xyz[1] for c in self.colors) / self.weight,
+                sum(c.count * c.xyz[2] for c in self.colors) / self.weight,
             )
 
     @classmethod
