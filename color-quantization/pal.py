@@ -99,6 +99,7 @@ class Color:
 @dataclass(slots=True)
 class Box:
     """A box is a cuboid containing a set of Color"""
+
     colors: list[Color]
     colorspace: str
     algo: str
@@ -267,6 +268,7 @@ class Box:
 @dataclass
 class Palette:
     """A 16×16 set of Color"""
+
     colors: list[Color]
 
     def save(self, path: Path):
@@ -316,6 +318,7 @@ class MedianCut:
     """
     Heckbert's Median-Cut algorithm with various box selection and cut customizations
     """
+
     colorspace: str
     algo: str
     max_colors: int

@@ -5,8 +5,9 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from pal import ALGOS, COLORSPACES, ImageData, MedianCut
 from PIL import Image
+
+from pal import ALGOS, COLORSPACES, ImageData, MedianCut
 
 # Each field is a CSV column
 _FIELDNAMES = ["ipath", "opath", "palpath", "best_mse"] + [
