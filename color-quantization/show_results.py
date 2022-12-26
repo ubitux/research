@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+from collections import Counter
 
 from pal import Palette
 
@@ -67,6 +68,9 @@ def _main(path: Path, png_save: Path | None):
             ax_mse = fig.add_subplot(nrows, ncols, base_idx + 2, sharex=ax_mse)
             ax_mse.barh(algos, sat_mses, color=colors, height=0.7)
             ax_mse.set_title(f"MSE (best: {best_mse})")
+
+    print("Winning algorithm(s):")
+    print(Counter(r["best_mse"] for r in rows).most_common())
 
     if png_save is None:
         plt.show()
