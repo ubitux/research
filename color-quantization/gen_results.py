@@ -1,10 +1,12 @@
 import argparse
 import csv
 import os
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from pal import ALGOS, COLORSPACES, MedianCut
+from pal import ALGOS, COLORSPACES, ImageData, MedianCut
+from PIL import Image
 
 # Each field is a CSV column
 _FIELDNAMES = ["ipath", "opath", "palpath"] + [f"mse_{algo}" for algo in ALGOS]
@@ -14,10 +16,16 @@ def _quantize(args, path: Path):
     best_mse = None
     row: dict[str, Any] = dict(ipath=path.name)
 
+    print(f"building {path} stats")
+    im = Image.open(path)
+    if im.mode != "RGB":
+        im = im.convert("RGB")
+    imd = ImageData(im, path, Counter(im.getdata()))
+
     for algo in ALGOS:
         result = MedianCut(
             args.colorspace, algo, args.max_colors, args.refine_max_count
-        )(path)
+        )(imd)
 
         # Unique identifier for this analysis
         uid = f"{args.colorspace}-{algo}-{args.max_colors}-{args.refine_max_count}-{path.stem}"

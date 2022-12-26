@@ -282,7 +282,7 @@ class Palette:
 @dataclass
 class Result:
     """Result of the analysis"""
-    ipath: Path
+
     colorspace: str
     algo: str
     max_colors: int
@@ -290,6 +290,13 @@ class Result:
     output: Image.Image
     palette: Palette
     mse: float
+
+
+@dataclass
+class ImageData:
+    img: Image.Image
+    path: Path
+    stats: Counter
 
 
 @dataclass
@@ -302,18 +309,11 @@ class MedianCut:
     max_colors: int
     refine_max_count: int
 
-    def __call__(self, ipath: Path) -> Result:
-        print(f"building {ipath.name} histogram")
-        iimg = Image.open(ipath)
-        if iimg.mode != "RGB":
-            iimg = iimg.convert("RGB")
-        idata = iimg.getdata()
-        irefs = Counter(idata)
-
+    def __call__(self, imd: ImageData) -> Result:
         print(f"building initial box in {self.colorspace}")
         all_icolors = [
             Color(srgb[:3], self.colorspace, count=count)
-            for srgb, count in irefs.most_common()
+            for srgb, count in imd.stats.most_common()
         ]
         box = Box(colors=all_icolors, colorspace=self.colorspace, algo=self.algo)
 
@@ -340,22 +340,22 @@ class MedianCut:
             for c in all_icolors
         }
 
-        print(f"quantize image of {len(idata)} colors")
+        print(f"quantize image of {imd.stats.total()} colors")
+        idata = imd.img.getdata()
         ocolors = [full_map[c] for c in idata]
         assert len(set(ocolors)) <= self.max_colors
-        output = Image.new(mode="RGB", size=iimg.size)
+        output = Image.new(mode="RGB", size=imd.img.size)
         output.putdata([c.srgb_bgr for c in ocolors])
 
         print("calculating MSE (in lab space) of the final image")
         icolors = [Color(srgb[:3], self.colorspace) for srgb in idata]
-        assert len(icolors) == len(ocolors)
+        assert len(icolors) == len(ocolors) == imd.stats.total()
         mse = sum(self._distsq(a.lab, b.lab) for a, b in zip(icolors, ocolors)) / len(
             icolors
         )
         print(f"MSE={mse}")
 
         return Result(
-            ipath,
             self.colorspace,
             self.algo,
             self.max_colors,
