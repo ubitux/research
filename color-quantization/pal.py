@@ -113,7 +113,7 @@ class Box:
     def __post_init__(self):
         self.update_stats()
 
-    def _get_err(self, measure: str):
+    def _get_err(self, measure: str) -> vec3:
         """
         Compute the squared error of each colors. Depending on the measure, we
         decide to honor their weight or normalize them.
@@ -137,7 +137,7 @@ class Box:
             err = (err[0] / self.weight, err[1] / self.weight, err[2] / self.weight)
         return err
 
-    def _get_ranges(self):
+    def _get_ranges(self) -> vec3:
         """Compute the ranges (or lengths) of each axis of the box"""
         return (
             max(c.xyz[0] for c in self.colors) - min(c.xyz[0] for c in self.colors),
