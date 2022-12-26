@@ -57,7 +57,7 @@ def _main(path: Path, png_save: Path | None):
             colors = ["C0"] * len(mses)
             colors[algos.index(row["best_mse"])] = "C1"
             ax_mse = fig.add_subplot(nrows, ncols, base_idx + 2)
-            ax_mse.barh(algos, mses, color=colors)
+            ax_mse.barh(algos, mses, color=colors, height=0.7)
             ax_mse.set_title("MSE")
 
     if png_save is None:

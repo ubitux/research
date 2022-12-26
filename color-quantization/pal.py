@@ -1,6 +1,7 @@
 import operator
 from collections import Counter
 from dataclasses import dataclass, field
+from math import prod
 from pathlib import Path
 
 from PIL import Image
@@ -9,19 +10,33 @@ ivec3 = tuple[int, int, int]
 vec3 = tuple[float, float, float]
 
 COLORSPACES = ["lab", "linear", "srgb"]
+
+# <axis-selection>_<operator>_<measurement>
 ALGOS = [
-    # cut axis with highest error
-    "xerr_sum_err_no_weight",
-    "xerr_sum_err_abs_weights",
-    "xerr_sum_err_norm_weights",
-    "xerr_longest_axis",
-    "xerr_largest_volume",
-    # cut longest axis
-    "xlen_sum_err_no_weight",
-    "xlen_sum_err_abs_weights",
-    "xlen_sum_err_norm_weights",
-    "xlen_longest_axis",
-    "xlen_largest_volume",
+    "xer2_max_er2absW",
+    "xer2_max_er2noW",
+    "xer2_max_er2normW",
+    "xer2_max_len",
+    "xer2_mul_er2absW",
+    "xer2_mul_er2noW",
+    "xer2_mul_er2normW",
+    "xer2_mul_len",
+    "xer2_sum_er2absW",
+    "xer2_sum_er2noW",
+    "xer2_sum_er2normW",
+    "xer2_sum_len",
+    "xlen_max_er2absW",
+    "xlen_max_er2noW",
+    "xlen_max_er2normW",
+    "xlen_max_len",
+    "xlen_mul_er2absW",
+    "xlen_mul_er2noW",
+    "xlen_mul_er2normW",
+    "xlen_mul_len",
+    "xlen_sum_er2absW",
+    "xlen_sum_er2noW",
+    "xlen_sum_er2normW",
+    "xlen_sum_len",
 ]
 
 
@@ -97,16 +112,16 @@ class Box:
     def __post_init__(self):
         self.update_stats()
 
-    def _get_err(self, weighted: bool, normed: bool):
+    def _get_err(self, measure: str):
         """
-        Compute the squared error of each colors. Depending on the algo, we
+        Compute the squared error of each colors. Depending on the measure, we
         decide to honor their weight or normalize them.
         """
         if self.average is None:
             self.update_average()
         r = self.average
         assert r is not None
-        if not weighted:
+        if measure == "er2noW":
             return (
                 sum((c.xyz[0] - r[0]) ** 2 for c in self.colors),
                 sum((c.xyz[1] - r[1]) ** 2 for c in self.colors),
@@ -117,7 +132,7 @@ class Box:
             sum(c.count * (c.xyz[1] - r[1]) ** 2 for c in self.colors),
             sum(c.count * (c.xyz[2] - r[2]) ** 2 for c in self.colors),
         )
-        if normed:
+        if measure == "er2normW":
             err = (err[0] / self.weight, err[1] / self.weight, err[2] / self.weight)
         return err
 
@@ -137,36 +152,33 @@ class Box:
         self.weight = sum(c.count for c in self.colors)
         self.average = None
 
-        cut, algo = self.algo.split("_", maxsplit=1)
-        weighted = "no_weight" not in algo
-        normed = "norm_weights" in algo
-        err = None
-        ranges = None
+        cut, axis_op, measure = self.algo.split("_")
+        axis_op = {"sum": sum, "mul": prod, "max": max}[axis_op]
+
+        er2 = self._get_err(measure) if "er2" in self.algo else None
+        ranges = self._get_ranges() if "len" in self.algo else None
 
         # Compute cut_score according to the selected algo. This score is the
         # factor responsible for choosing the next box to split
-        if algo.startswith("sum_err"):
-            err = self._get_err(weighted, normed)
-            self.cut_score = sum(err)
+        if measure.startswith("er2"):
+            assert er2 is not None
+            self.cut_score = axis_op(er2)
+        elif measure == "len":
+            assert ranges is not None
+            self.cut_score = axis_op(ranges)
         else:
-            ranges = self._get_ranges()
-            if algo == "longest_axis":
-                self.cut_score = max(ranges)
-            elif algo == "largest_volume":
-                self.cut_score = ranges[0] * ranges[1] * ranges[2]
-            else:
-                assert False
+            assert False
 
         # Compute the sort_order according to the selected algo. This order
         # defines which axis is going to be cut.
-        if cut == "xlen":
-            if ranges is None:
-                ranges = self._get_ranges()
+        if cut == "xer2":
+            assert er2 is not None
+            self.sort_order = self.sort_columns(*er2)
+        elif cut == "xlen":
+            assert ranges is not None
             self.sort_order = self.sort_columns(*ranges)
         else:
-            if err is None:
-                err = self._get_err(weighted, normed)
-            self.sort_order = self.sort_columns(*err)
+            assert False
 
         self.sorted_by = None
 
@@ -174,7 +186,7 @@ class Box:
         """
         Compute the average of all the colors, usually honoring their weight.
         """
-        if self.algo.endswith("no_weight"):
+        if self.algo.endswith("noW"):
             self.average = (
                 sum(c.xyz[0] for c in self.colors) / len(self.colors),
                 sum(c.xyz[1] for c in self.colors) / len(self.colors),
@@ -320,7 +332,7 @@ class MedianCut:
         print(f"start cutting initial box of {len(all_icolors)} different colors")
         boxes = self._median_cut(box)
 
-        honor_weights = self.algo.endswith("no_weight")
+        honor_weights = self.algo.endswith("noW")
         for i in range(1, self.refine_max_count + 1):
             print(f"running kmeans refinement {i}/{self.refine_max_count}")
             boxes = self._kmeans_iteration(boxes, honor_weights)
@@ -408,7 +420,7 @@ class MedianCut:
                 box.sorted_by = box.sort_order
 
             # identify cut point
-            if self.algo.endswith("no_weight"):
+            if self.algo.endswith("noW"):
                 cut = (len(box.colors) + 1) >> 1
             else:
                 median = (box.weight + 1) >> 1
