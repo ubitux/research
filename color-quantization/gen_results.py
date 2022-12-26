@@ -2,6 +2,8 @@ import argparse
 import csv
 import os
 from collections import Counter
+from itertools import repeat
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +56,11 @@ def _quantize(args, path: Path):
     return row
 
 
+def _quantize_mt(mt_args):
+    args, path = mt_args
+    return _quantize(args, Path(path))
+
+
 def _main():
     parser = argparse.ArgumentParser(
         "Quantize, analyze and generate results of all specified images"
@@ -82,15 +89,25 @@ def _main():
         default=0,
         help="Maximum number of K-means refinement passes",
     )
+    parser.add_argument(
+        "--nb-threads",
+        type=int,
+        default=cpu_count(),
+        help="Number of parallel threads",
+    )
     parser.add_argument("files", nargs="+", help="All the images to analyze")
     args = parser.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
+
+    quant_args = zip(repeat(args), args.files)
+    with Pool(args.nb_threads) as p:
+        rows = p.map(_quantize_mt, quant_args)
+
     with open(args.outdir / "data.csv", "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=_FIELDNAMES)
         writer.writeheader()
-        for path in sorted(args.files):
-            writer.writerow(_quantize(args, Path(path)))
+        writer.writerows(sorted(rows, key=lambda r: r["ipath"]))
 
 
 if __name__ == "__main__":
