@@ -17,7 +17,7 @@ _FIELDNAMES = ["ipath", "opath", "palpath", "best_mse"] + [
 
 def _quantize(args, path: Path):
     best_mse = None
-    row: dict[str, Any] = dict(ipath=path.name)
+    row: dict[str, Any] = dict(ipath=path)
 
     print(f"building {path} stats")
     im = Image.open(path)
