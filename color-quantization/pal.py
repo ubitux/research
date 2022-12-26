@@ -311,6 +311,14 @@ class ImageData:
     path: Path
     stats: Counter
 
+    @classmethod
+    def from_path(cls, path: Path):
+        im = Image.open(path)
+        if im.mode != "RGB":
+            im = im.convert("RGB")
+        print(f"building {path} stats")
+        return cls(im, path, Counter(im.getdata()))
+
 
 @dataclass
 class MedianCut:

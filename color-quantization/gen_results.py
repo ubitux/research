@@ -1,13 +1,10 @@
 import argparse
 import csv
 import os
-from collections import Counter
 from itertools import repeat
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
-
-from PIL import Image
 
 from pal import ALGOS, COLORSPACES, ImageData, MedianCut
 
@@ -21,11 +18,7 @@ def _quantize(args, path: Path):
     best_mse = None
     row: dict[str, Any] = dict(ipath=path)
 
-    print(f"building {path} stats")
-    im = Image.open(path)
-    if im.mode != "RGB":
-        im = im.convert("RGB")
-    imd = ImageData(im, path, Counter(im.getdata()))
+    imd = ImageData.from_path(path)
 
     for algo in ALGOS:
         result = MedianCut(
