@@ -1,6 +1,5 @@
 import argparse
 import csv
-import operator
 from pathlib import Path
 
 import matplotlib.image as mpimg
@@ -55,11 +54,8 @@ def _main(path: Path, png_save: Path | None):
                     if k.startswith("mse_")
                 )
             )
-            _, best_mse_index = min(
-                ((mse, i) for i, mse in enumerate(mses)), key=operator.itemgetter(0)
-            )
             colors = ["C0"] * len(mses)
-            colors[best_mse_index] = "C1"
+            colors[algos.index(row["best_mse"])] = "C1"
             ax_mse = fig.add_subplot(nrows, ncols, base_idx + 2)
             ax_mse.barh(algos, mses, color=colors)
             ax_mse.set_title("MSE")

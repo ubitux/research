@@ -9,7 +9,9 @@ from pal import ALGOS, COLORSPACES, ImageData, MedianCut
 from PIL import Image
 
 # Each field is a CSV column
-_FIELDNAMES = ["ipath", "opath", "palpath"] + [f"mse_{algo}" for algo in ALGOS]
+_FIELDNAMES = ["ipath", "opath", "palpath", "best_mse"] + [
+    f"mse_{algo}" for algo in ALGOS
+]
 
 
 def _quantize(args, path: Path):
@@ -46,6 +48,7 @@ def _quantize(args, path: Path):
             best_mse = result.mse
             row["opath"] = opath
             row["palpath"] = palpath
+            row["best_mse"] = algo
 
     return row
 
