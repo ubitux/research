@@ -10,6 +10,7 @@ the most appropriate for next box selection and axis cut selection.
 **Note**: the scripts depend on Python3, `matplotlib` and `PIL`
 
 - `pal.py`: core lib where all the important code is
+- `convert.py`: simple script to quantize an image, see `--help` for more info
 - `gen_results.py`: generate results, see `--help` for more info
 - `show_results.py`: show or export the results in an image, see `--help` for
   more info
