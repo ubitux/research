@@ -29,6 +29,8 @@ def _main(path: Path, png_save: Path | None):
         # ax is a 3D projection, and apparently it can't be changed later
         fig = plt.figure(figsize=(ncols * res, nrows * res), layout="constrained")
 
+        ax_mse = None
+
         for i, row in enumerate(rows):
             base_idx = i * ncols + 1
 
@@ -54,11 +56,17 @@ def _main(path: Path, png_save: Path | None):
                     if k.startswith("mse_")
                 )
             )
-            colors = ["C0"] * len(mses)
-            colors[algos.index(row["best_mse"])] = "C1"
-            ax_mse = fig.add_subplot(nrows, ncols, base_idx + 2)
-            ax_mse.barh(algos, mses, color=colors, height=0.7)
-            ax_mse.set_title("MSE")
+            colors = ["grey"] * len(mses)
+
+            sat_mses = [min(mse, 0.0012) for mse in mses]
+            colors = [(c if sat_mses[i] == mses[i] else "red") for i, c in enumerate(colors)]
+
+            best_mse = row["best_mse"]
+            colors[algos.index(best_mse)] = "C0"
+
+            ax_mse = fig.add_subplot(nrows, ncols, base_idx + 2, sharex=ax_mse)
+            ax_mse.barh(algos, sat_mses, color=colors, height=0.7)
+            ax_mse.set_title(f"MSE (best: {best_mse})")
 
     if png_save is None:
         plt.show()
