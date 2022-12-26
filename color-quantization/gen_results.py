@@ -89,7 +89,7 @@ def _main():
     with open(args.outdir / "data.csv", "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=_FIELDNAMES)
         writer.writeheader()
-        for path in args.files:
+        for path in sorted(args.files):
             writer.writerow(_quantize(args, Path(path)))
 
 
