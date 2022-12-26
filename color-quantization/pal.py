@@ -256,9 +256,9 @@ class Box:
 
         return Color(
             srgb=(
-                min(round(triplet[0] * 0xFF), 0xFF),
-                min(round(triplet[1] * 0xFF), 0xFF),
-                min(round(triplet[2] * 0xFF), 0xFF),
+                max(min(round(triplet[0] * 0xFF), 0xFF), 0x00),
+                max(min(round(triplet[1] * 0xFF), 0xFF), 0x00),
+                max(min(round(triplet[2] * 0xFF), 0xFF), 0x00),
             ),
             colorspace=self.colorspace,
         )
