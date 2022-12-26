@@ -118,8 +118,7 @@ class Box:
         Compute the squared error of each colors. Depending on the measure, we
         decide to honor their weight or normalize them.
         """
-        if self.average is None:
-            self.update_average()
+        self.update_average()
         r = self.average
         assert r is not None
         if measure == "er2noW":
