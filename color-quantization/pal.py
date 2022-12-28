@@ -345,7 +345,10 @@ class MedianCut:
         honor_weights = self.algo.endswith("noW")
         for i in range(1, self.refine_max_count + 1):
             print(f"running kmeans refinement {i}/{self.refine_max_count}")
-            boxes = self._kmeans_iteration(boxes, honor_weights)
+            boxes, nb_changed = self._kmeans_iteration(boxes, honor_weights)
+            if nb_changed == 0:
+                print(f"reached best state at iteration {i}, stopping")
+                break
 
         print(f"averaging the {len(boxes)} boxes")
         colors = [box.get_average_color() for box in boxes]
@@ -464,7 +467,7 @@ class MedianCut:
 
         return boxes
 
-    def _kmeans_iteration(self, boxes: list[Box], honor_weights: bool) -> list[Box]:
+    def _kmeans_iteration(self, boxes: list[Box], honor_weights: bool) -> tuple[list[Box], int]:
         """
         Extremelly naive K-means iteration that can be used for refinement.
         Still experimental.
@@ -492,7 +495,7 @@ class MedianCut:
             box.update_stats()
             box.update_average()
 
-        return boxes
+        return boxes, box_change_count
 
     def _get_closest_box(
         self, boxes: list[Box], color: Color, honor_weights: bool
