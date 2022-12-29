@@ -240,8 +240,7 @@ class Box:
 
     def get_average_color(self):
         """Build the average color of the box and wrap it in a Color object"""
-        if self.average is None:
-            self.update_average()
+        self.update_average()
         assert self.average is not None
 
         if self.colorspace == "lab":
