@@ -47,8 +47,8 @@ Each algo follows the `<axis-selection>_<operator>_<measurement>` naming, where:
 The MSE metrics providing the best overall results is `xer2_max_er2absW`
 (followed by `xer2_sum_er2absW`), which means:
 
-1. Overall, the box with the axis that has the axis with largest non-normalized
-   weighted sum of the squared error is the best candidate in the box selection
+1. Overall, the box that has the axis with the largest non-normalized weighted
+   sum of the squared error is the best candidate in the box selection
    algorithm
 2. Overall, cutting the axis with the largest weighted sum of squared error is
    the best axis cut selection algorithm
