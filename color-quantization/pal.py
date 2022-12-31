@@ -325,10 +325,10 @@ class MedianCut:
     Heckbert's Median-Cut algorithm with various box selection and cut customizations
     """
 
-    colorspace: str
-    algo: str
-    max_colors: int
-    refine_max_count: int
+    colorspace: str = "lab"
+    algo: str = "xer2_max_er2absW"
+    max_colors: int = 256
+    refine_max_count: int = 0
 
     def __call__(self, imd: ImageData) -> Result:
         print(f"building initial box in {self.colorspace}")
