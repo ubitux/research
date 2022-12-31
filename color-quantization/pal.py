@@ -238,7 +238,7 @@ class Box:
             -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
         )
 
-    def get_average_color(self):
+    def get_average_color(self) -> Color:
         """Build the average color of the box and wrap it in a Color object"""
         self.update_average()
         assert self.average is not None
