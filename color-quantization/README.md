@@ -18,6 +18,8 @@ For more context, see http://blog.pkh.me/p/39-improving-color-quantization-heuri
   more info
 - `show_pal.py`: tool to display a palette stored in a 16×16 file in sRGB,
   Linear and OkLab
+- `boxdbg.py`: a tool to generate a demonstration video of how the algorithm
+  works, see `--help` for more info
 - `samples`: some sample files
 
 
