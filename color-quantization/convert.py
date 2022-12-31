@@ -35,8 +35,8 @@ def _main():
         type=Path,
         help="Palette output",
     )
-    parser.add_argument("input", help="The image to convert")
-    parser.add_argument("output", help="The output image")
+    parser.add_argument("input", type=Path, help="The image to convert")
+    parser.add_argument("output", type=Path, help="The output image")
     args = parser.parse_args()
 
     mc = MedianCut(args.colorspace, args.algo, args.max_colors, args.refine_max_count)
