@@ -271,7 +271,8 @@ class Palette:
 
     def save(self, path: Path):
         im = Image.new(mode="RGB", size=(16, 16))
-        im.putdata([c.srgb_bgr for c in self.colors])
+        colors = sorted(self.colors, key=lambda c: operator.itemgetter(1, 2, 0)(c.lab))
+        im.putdata([c.srgb_bgr for c in colors])
         im.save(path)
 
     @classmethod
