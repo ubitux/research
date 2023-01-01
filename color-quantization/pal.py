@@ -291,6 +291,12 @@ class Palette:
         colors = [Color(c, colorspace="lab") for c in sorted(px)]
         return cls(colors)
 
+    @classmethod
+    def from_boxes(cls, boxes: list[Box]):
+        print(f"averaging the {len(boxes)} boxes")
+        colors = [box.get_average_color() for box in boxes]
+        return cls(colors)
+
 
 @dataclass
 class Result:
@@ -332,16 +338,32 @@ class MedianCut:
     refine_max_count: int = 0
 
     def __call__(self, imd: ImageData) -> Result:
+        box = self._encapsulate_all_colors(imd)
+        all_icolors = box.colors
+        boxes = self._median_cut(box)
+        self._refine_cut(boxes)
+        pal = Palette.from_boxes(boxes)
+        full_map = self._build_colormap(all_icolors, pal)
+        output, mse = self._quantize_image(imd, full_map)
+        return Result(
+            self.colorspace,
+            self.algo,
+            self.max_colors,
+            self.refine_max_count,
+            output,
+            pal,
+            mse,
+        )
+
+    def _encapsulate_all_colors(self, imd: ImageData) -> Box:
         print(f"building initial box in {self.colorspace}")
         all_icolors = [
             Color(srgb[:3], self.colorspace, count=count)
             for srgb, count in imd.stats.most_common()
         ]
-        box = Box(colors=all_icolors, colorspace=self.colorspace, algo=self.algo)
+        return Box(colors=all_icolors, colorspace=self.colorspace, algo=self.algo)
 
-        print(f"start cutting initial box of {len(all_icolors)} different colors")
-        boxes = self._median_cut(box)
-
+    def _refine_cut(self, boxes: list[Box]):
         honor_weights = self.algo.endswith("noW")
         for i in range(1, self.refine_max_count + 1):
             print(f"running kmeans refinement {i}/{self.refine_max_count}")
@@ -350,24 +372,24 @@ class MedianCut:
                 print(f"reached best state at iteration {i}, stopping")
                 break
 
-        print(f"averaging the {len(boxes)} boxes")
-        colors = [box.get_average_color() for box in boxes]
-        pal = Palette(colors)
-
+    def _build_colormap(self, colors: list[Color], pal: Palette) -> dict[ivec3, Color]:
         print(f"creating colormap minimizing ΔE in {self.colorspace}")
-        pal_set = set(colors)
-        full_map = {
+        pal_set = set(pal.colors)
+        return {
             # find closest color in palette: the one minimizing the distance squared
             c.srgb: min(
                 ((self._distsq(pal_c.xyz, c.xyz), pal_c) for pal_c in pal_set),
                 key=operator.itemgetter(0),
             )[1]
-            for c in all_icolors
+            for c in colors
         }
 
+    def _quantize_image(
+        self, imd: ImageData, clr_map: dict[ivec3, Color]
+    ) -> tuple[Image.Image, float]:
         print(f"quantize image of {imd.stats.total()} colors")
         idata = imd.img.getdata()
-        ocolors = [full_map[c] for c in idata]
+        ocolors = [clr_map[c] for c in idata]
         assert len(set(ocolors)) <= self.max_colors
         output = Image.new(mode="RGB", size=imd.img.size)
         output.putdata([c.srgb_bgr for c in ocolors])
@@ -379,16 +401,7 @@ class MedianCut:
             icolors
         )
         print(f"MSE={mse}")
-
-        return Result(
-            self.colorspace,
-            self.algo,
-            self.max_colors,
-            self.refine_max_count,
-            output,
-            pal,
-            mse,
-        )
+        return output, mse
 
     @classmethod
     def _distsq(cls, p0: vec3, p1: vec3) -> float:
@@ -420,6 +433,7 @@ class MedianCut:
         number of colors
         """
 
+        print(f"start cutting initial box of {len(box.colors)} different colors")
         boxes = [box]
         while True:
             if len(box.colors) < 2:
