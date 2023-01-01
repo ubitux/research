@@ -481,7 +481,9 @@ class MedianCut:
 
         return boxes
 
-    def _kmeans_iteration(self, boxes: list[Box], honor_weights: bool) -> tuple[list[Box], int]:
+    def _kmeans_iteration(
+        self, boxes: list[Box], honor_weights: bool
+    ) -> tuple[list[Box], int]:
         """
         Extremelly naive K-means iteration that can be used for refinement.
         Still experimental.
