@@ -338,13 +338,13 @@ class MedianCut:
     refine_max_count: int = 0
 
     def __call__(self, imd: ImageData) -> Result:
-        box = self._encapsulate_all_colors(imd)
+        box = self.encapsulate_all_colors(imd)
         all_icolors = box.colors
-        boxes = self._median_cut(box)
-        self._refine_cut(boxes)
+        boxes = self.median_cut(box)
+        self.refine_cut(boxes)
         pal = Palette.from_boxes(boxes)
-        full_map = self._build_colormap(all_icolors, pal)
-        output, mse = self._quantize_image(imd, full_map)
+        full_map = self.build_colormap(all_icolors, pal)
+        output, mse = self.quantize_image(imd, full_map)
         return Result(
             self.colorspace,
             self.algo,
@@ -355,7 +355,7 @@ class MedianCut:
             mse,
         )
 
-    def _encapsulate_all_colors(self, imd: ImageData) -> Box:
+    def encapsulate_all_colors(self, imd: ImageData) -> Box:
         print(f"building initial box in {self.colorspace}")
         all_icolors = [
             Color(srgb[:3], self.colorspace, count=count)
@@ -363,7 +363,7 @@ class MedianCut:
         ]
         return Box(colors=all_icolors, colorspace=self.colorspace, algo=self.algo)
 
-    def _refine_cut(self, boxes: list[Box]):
+    def refine_cut(self, boxes: list[Box]):
         honor_weights = self.algo.endswith("noW")
         for i in range(1, self.refine_max_count + 1):
             print(f"running kmeans refinement {i}/{self.refine_max_count}")
@@ -372,7 +372,7 @@ class MedianCut:
                 print(f"reached best state at iteration {i}, stopping")
                 break
 
-    def _build_colormap(self, colors: list[Color], pal: Palette) -> dict[ivec3, Color]:
+    def build_colormap(self, colors: list[Color], pal: Palette) -> dict[ivec3, Color]:
         print(f"creating colormap minimizing ΔE in {self.colorspace}")
         pal_set = set(pal.colors)
         return {
@@ -384,7 +384,7 @@ class MedianCut:
             for c in colors
         }
 
-    def _quantize_image(
+    def quantize_image(
         self, imd: ImageData, clr_map: dict[ivec3, Color]
     ) -> tuple[Image.Image, float]:
         print(f"quantize image of {imd.stats.total()} colors")
@@ -427,7 +427,7 @@ class MedianCut:
                 max_score = box.cut_score
         return best
 
-    def _median_cut(self, box: Box) -> list[Box]:
+    def median_cut(self, box: Box) -> list[Box]:
         """
         The core of the algorithm: split boxes until we reach our maximum
         number of colors
