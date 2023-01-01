@@ -1,34 +1,36 @@
+import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 
 from pal import Palette
 
-_PAL_DISPLAY = [
-    ("srgb", "sRGB", ("R'", "G'", "B'")),
-    ("linear", "sRGB linear", tuple("RGB")),
-    ("lab", "OkLab", tuple("Lab")),
-]
+
+@dataclass
+class _Spec:
+    field: str
+    title: str
+    axis_labels: tuple[str, str, str]
 
 
-def _main():
+def _main(files: list[Path], specs: dict[str, _Spec]):
     plt.style.use("dark_background")
     fig = plt.figure()
 
-    files = list(map(Path, sys.argv[1:]))
-    nrows, ncols = len(files), len(_PAL_DISPLAY)
+    nrows, ncols = len(files), len(specs)
 
     for i, path in enumerate(files):
         pal = Palette.from_path(path)
 
         base_idx = i * ncols + 1
-        axes = [
-            fig.add_subplot(nrows, ncols, base_idx + j, projection="3d")
-            for j in range(len(_PAL_DISPLAY))
-        ]
-        for ax, (field, space, labels) in zip(axes, _PAL_DISPLAY):
-            ax.set_title(f"{path.stem} ({space})")
+        for j, (colorspace, spec) in enumerate(specs.items()):
+            ax = fig.add_subplot(nrows, ncols, base_idx + j, projection="3d")
+            field = spec.field
+            labels = spec.axis_labels
+
+            ax.set_title(spec.title)
             ax.set_xlabel(labels[0])
             ax.set_ylabel(labels[1])
             ax.set_zlabel(labels[2])
@@ -40,4 +42,38 @@ def _main():
 
 
 if __name__ == "__main__":
-    _main()
+    parser = argparse.ArgumentParser("Display a palette")
+    parser.add_argument(
+        "--show-srgb",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Show palette as sRGB",
+    )
+    parser.add_argument(
+        "--show-linear",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Show palette as sRGB linear",
+    )
+    parser.add_argument(
+        "--show-oklab",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Show palette as OkLab",
+    )
+    parser.add_argument("files", nargs="+", type=Path, help="16x16 palette files")
+    args = parser.parse_args()
+
+    specs = {}
+    if args.show_srgb:
+        specs["srgb"] = _Spec("srgb", "sRGB", ("R'", "G'", "B'"))
+    if args.show_linear:
+        specs["linear"] = _Spec("linear", "sRGB linear", tuple("RGB"))
+    if args.show_oklab:
+        specs["oklab"] = _Spec("lab", "OkLab", tuple("Lab"))
+
+    if not specs:
+        print("Palette needs at least one representation")
+        sys.exit(1)
+
+    _main(args.files, specs)
