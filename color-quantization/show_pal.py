@@ -5,7 +5,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from pal import Palette
+from pal import ImageData, MedianCut, Palette
 
 
 @dataclass
@@ -15,16 +15,32 @@ class _Spec:
     axis_labels: tuple[str, str, str]
 
 
-def _main(files: list[Path], specs: dict[str, _Spec]):
+def _main(files: list[Path], as_image: bool, specs: dict[str, _Spec]):
     plt.style.use("dark_background")
     fig = plt.figure()
 
     nrows, ncols = len(files), len(specs)
+    if as_image:
+        mc = MedianCut()
+        ncols += 1
+    else:
+        mc = None
 
     for i, path in enumerate(files):
-        pal = Palette.from_path(path)
-
         base_idx = i * ncols + 1
+
+        if mc is None:
+            pal = Palette.from_path(path)
+        else:
+            imd = ImageData.from_path(path)
+            box = mc.encapsulate_all_colors(imd)
+            boxes = mc.median_cut(box)
+            pal = Palette.from_boxes(boxes)
+
+            ax = fig.add_subplot(nrows, ncols, base_idx)
+            ax.imshow(imd.img)
+            base_idx += 1
+
         for j, (colorspace, spec) in enumerate(specs.items()):
             ax = fig.add_subplot(nrows, ncols, base_idx + j, projection="3d")
             field = spec.field
@@ -41,7 +57,6 @@ def _main(files: list[Path], specs: dict[str, _Spec]):
             for color in pal.colors:
                 ax.plot(*getattr(color, field), "o", color=f"#{color.srgb_rgb:06x}")
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -71,7 +86,18 @@ if __name__ == "__main__":
         default=False,
         help="Show palette as OkLab with normalized axis",
     )
-    parser.add_argument("files", nargs="+", type=Path, help="16x16 palette files")
+    parser.add_argument(
+        "--as-image",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Consider the input files as images (a palette will be computed)",
+    )
+    parser.add_argument(
+        "files",
+        nargs="+",
+        type=Path,
+        help="Input files: 16x16 palette images or input images (if --as-image is specified)",
+    )
     args = parser.parse_args()
 
     specs = {}
@@ -88,4 +114,4 @@ if __name__ == "__main__":
         print("Palette needs at least one representation")
         sys.exit(1)
 
-    _main(args.files, specs)
+    _main(args.files, args.as_image, specs)
