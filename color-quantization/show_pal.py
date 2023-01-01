@@ -15,7 +15,7 @@ class _Spec:
     axis_labels: tuple[str, str, str]
 
 
-def _main(files: list[Path], as_image: bool, specs: dict[str, _Spec]):
+def _main(files: list[Path], as_image: bool, show_2d: bool, specs: dict[str, _Spec]):
     plt.style.use("dark_background")
     fig = plt.figure()
 
@@ -25,6 +25,9 @@ def _main(files: list[Path], as_image: bool, specs: dict[str, _Spec]):
         ncols += 1
     else:
         mc = None
+
+    if show_2d:
+        ncols += 1
 
     for i, path in enumerate(files):
         base_idx = i * ncols + 1
@@ -39,6 +42,11 @@ def _main(files: list[Path], as_image: bool, specs: dict[str, _Spec]):
 
             ax = fig.add_subplot(nrows, ncols, base_idx)
             ax.imshow(imd.img)
+            base_idx += 1
+
+        if show_2d:
+            ax = fig.add_subplot(nrows, ncols, base_idx)
+            ax.imshow(pal.as_image2d())
             base_idx += 1
 
         for j, (colorspace, spec) in enumerate(specs.items()):
@@ -67,6 +75,12 @@ if __name__ == "__main__":
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Show palette as sRGB",
+    )
+    parser.add_argument(
+        "--show-2d",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Show 2D palette image",
     )
     parser.add_argument(
         "--show-linear",
@@ -114,4 +128,4 @@ if __name__ == "__main__":
         print("Palette needs at least one representation")
         sys.exit(1)
 
-    _main(args.files, args.as_image, specs)
+    _main(args.files, args.as_image, args.show_2d, specs)

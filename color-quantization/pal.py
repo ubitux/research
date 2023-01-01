@@ -270,10 +270,14 @@ class Palette:
     colors: list[Color]
 
     def save(self, path: Path):
+        im = self.as_image2d()
+        im.save(path)
+
+    def as_image2d(self) -> Image.Image:
         im = Image.new(mode="RGB", size=(16, 16))
         colors = sorted(self.colors, key=lambda c: operator.itemgetter(1, 2, 0)(c.lab))
         im.putdata([c.srgb_bgr for c in colors])
-        im.save(path)
+        return im
 
     @classmethod
     def from_path(cls, path: Path):
