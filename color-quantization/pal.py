@@ -341,6 +341,7 @@ class MedianCut:
     algo: str = "xer2_max_er2absW"
     max_colors: int = 256
     refine_max_count: int = 0
+    compute_mse: bool = True
 
     def __call__(self, imd: ImageData) -> Result:
         box = self.encapsulate_all_colors(imd)
@@ -398,6 +399,9 @@ class MedianCut:
         assert len(set(ocolors)) <= self.max_colors
         output = Image.new(mode="RGB", size=imd.img.size)
         output.putdata([c.srgb_bgr for c in ocolors])
+
+        if not self.compute_mse:
+            return output, float("NaN")
 
         print("calculating MSE (in lab space) of the final image")
         icolors = [Color(srgb[:3], self.colorspace) for srgb in idata]
