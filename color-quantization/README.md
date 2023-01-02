@@ -4,6 +4,8 @@ This is a study & experiment about various formulas for optimizing median cut
 algorithm heuristics. In particular, this is an experiment on which logic is
 the most appropriate for next box selection and axis cut selection.
 
+For more context, see http://blog.pkh.me/p/39-improving-color-quantization-heuristics.html
+
 
 ## Tree
 
