@@ -37,7 +37,7 @@ def _main(files: list[Path], as_image: bool, show_2d: bool, specs: dict[str, _Sp
         else:
             imd = ImageData.from_path(path)
             box = mc.encapsulate_all_colors(imd)
-            boxes = mc.median_cut(box)
+            boxes = [b for b in mc.median_cut(box)]
             pal = Palette.from_boxes(boxes)
 
             ax = fig.add_subplot(nrows, ncols, base_idx)

@@ -2,6 +2,7 @@ import operator
 from collections import Counter
 from dataclasses import dataclass, field
 from math import prod
+from typing import Iterator
 from pathlib import Path
 
 from PIL import Image
@@ -344,7 +345,7 @@ class MedianCut:
     def __call__(self, imd: ImageData) -> Result:
         box = self.encapsulate_all_colors(imd)
         all_icolors = box.colors
-        boxes = self.median_cut(box)
+        boxes = [b for b in self.median_cut(box)]
         self.refine_cut(boxes)
         pal = Palette.from_boxes(boxes)
         full_map = self.build_colormap(all_icolors, pal)
@@ -431,7 +432,7 @@ class MedianCut:
                 max_score = box.cut_score
         return best
 
-    def median_cut(self, box: Box) -> list[Box]:
+    def median_cut(self, box: Box) -> Iterator[Box]:
         """
         The core of the algorithm: split boxes until we reach our maximum
         number of colors
@@ -439,6 +440,8 @@ class MedianCut:
 
         print(f"start cutting initial box of {len(box.colors)} different colors")
         boxes = [box]
+        yield box
+
         while True:
             if len(box.colors) < 2:
                 break
@@ -476,14 +479,14 @@ class MedianCut:
             assert len(box.colors) >= 1
             assert len(new_box.colors) >= 1
             boxes.append(new_box)
+            yield new_box
 
             # fetch the next best candidate for splitting
             next_box = self._get_next_box_to_split(boxes)
             if next_box is None:
                 break
-            box = next_box
 
-        return boxes
+            box = next_box
 
     def _kmeans_iteration(
         self, boxes: list[Box], honor_weights: bool
