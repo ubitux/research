@@ -46,8 +46,10 @@ def _main(path: Path, png_save: Path | None):
             ax_pal.set_xlabel("L")
             ax_pal.set_ylabel("a")
             ax_pal.set_zlabel("b")
-            for color in pal.colors:
-                ax_pal.plot(*color.lab, ".", color=f"#{color.srgb_rgb:06x}")
+
+            colors_hex = [f"#{c.srgb_rgb:06x}" for c in pal.colors]
+            x, y, z = zip(*[c.lab for c in pal.colors])
+            ax_pal.scatter3D(x, y, z, c=colors_hex)
 
             # All the MSE scores
             algos, mses = zip(

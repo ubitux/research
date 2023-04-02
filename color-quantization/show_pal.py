@@ -62,8 +62,10 @@ def _main(files: list[Path], as_image: bool, show_2d: bool, specs: dict[str, _Sp
                 ax.set_xlim([0, 1])
                 ax.set_ylim([-0.5, 0.5])
                 ax.set_zlim([-0.5, 0.5])
-            for color in pal.colors:
-                ax.plot(*getattr(color, field), "o", color=f"#{color.srgb_rgb:06x}")
+
+            colors_hex = [f"#{c.srgb_rgb:06x}" for c in pal.colors]
+            x, y, z = zip(*[getattr(c, field) for c in pal.colors])
+            ax.scatter3D(x, y, z, c=colors_hex)
 
     plt.show()
 

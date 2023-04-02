@@ -97,8 +97,10 @@ def _main():
                     ax3d.set_xlabel("L")
                     ax3d.set_ylabel("a")
                     ax3d.set_zlabel("b")
-                    for color in display_pal.colors:
-                        ax3d.plot(*color.lab, ".", color=f"#{color.srgb_rgb:06x}")
+
+                    colors_hex = [f"#{c.srgb_rgb:06x}" for c in display_pal.colors]
+                    L, a, b = zip(*[c.lab for c in display_pal.colors])
+                    ax3d.scatter3D(L, a, b, c=colors_hex)
 
                     for box in boxes:
                         color = box.get_average_color()
